@@ -15,16 +15,15 @@ public class EmailSender {
     public static void main(String[] args) throws MessagingException, FileNotFoundException {
         ContentManager contentManager = new ContentManager("july2025");
         contentManager.pullContent();
-
-        String subject = contentManager.getSubject();
-        String text = contentManager.getText();
+        contentManager.getEmailPreview();
         Message message = new MimeMessage(getEmailSession());
 
         message.setFrom(new InternetAddress(EMAIL_FROM));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(EMAIL_TO));
-        message.setSubject("FIM testing");
-        message.setText("FIM testing text section");
+        message.setSubject(contentManager.getSubject());
+        message.setText(contentManager.getText());
         //Transport.send(message);
+        //System.out.println("Email Sent");
 
     }
 

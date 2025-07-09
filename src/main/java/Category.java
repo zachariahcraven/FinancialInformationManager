@@ -11,6 +11,7 @@ public class Category {
     public Category() {
         this.spent = 0;
         this.spentChange = 0;
+
     }
 
     public void setAllocated(int allocated) {
@@ -42,11 +43,11 @@ public class Category {
     }
 
     public void updateRemaining(int spent) {
-        this.remaining -= spent;
+        this.remaining = spent;
     }
 
     public void updateRemainingChange(int spentChange) {
-        this.remainingChange -= spentChange;
+        this.remainingChange = spentChange;
     }
 
     public String getName() {

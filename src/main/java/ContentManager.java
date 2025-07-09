@@ -1,3 +1,4 @@
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -13,6 +14,7 @@ public class ContentManager {
     private int income;
     private int incomeChange;
     private int totalAllocated;
+    private int totalAllocatedChange;
     private int expended;
     private int expendedChange;
     private HashMap<String, Category> categories;
@@ -22,25 +24,35 @@ public class ContentManager {
         this.fileName = fileName;
         this.expended = 0;
         this.expendedChange = 0;
+        this.totalAllocated = 0;
+        this.totalAllocatedChange = 0;
+        this.categories = new HashMap<>();
     }
 
     public void pullContent() {
-        try (FileInputStream fileInputStream = new FileInputStream("src/main/workbooks/" + fileName + "xlsx")) {
+        try (FileInputStream fileInputStream = new FileInputStream("src/main/workbooks/" + fileName + ".xlsx")) {
             Workbook workbook = new XSSFWorkbook(fileInputStream);
-            //take in the budget
+            //Take in the budget sheet
             Sheet budget = workbook.getSheet("budget");
             for (int i = 1; i < budget.getPhysicalNumberOfRows(); i++) {
                 Row row = budget.getRow(i);
                 Category category = new Category();
                 double allocatedAmount = row.getCell(1).getNumericCellValue();
+                int allocatedChange = (int) (allocatedAmount - ((int) allocatedAmount)) * 100;
+                //Set category name
                 category.setName(row.getCell(0).getStringCellValue());
+                //Set allocated amounts
                 category.setAllocated((int) allocatedAmount);
-                category.setAllocatedChange((int) (allocatedAmount * 100) % 100);
+                category.setAllocatedChange(allocatedChange);
+                //Update totals for budget
+                totalAllocated += (int) allocatedAmount;
+                totalAllocatedChange +=  allocatedChange;
+                //Set Remaining amounts in category
                 category.setRemaining(category.getAllocated());
                 category.setRemainingChange(category.getAllocatedChange());
                 categories.put(category.getName(), category);
             }
-            //take in the transactions
+            //Take in the transactions
             Sheet transactions = workbook.getSheet("transactions");
             for (int i = 1; i < transactions.getPhysicalNumberOfRows(); i++) {
                 Row row = transactions.getRow(i);
@@ -51,11 +63,21 @@ public class ContentManager {
                 //Update category spent and remaining
                 category.addSpent((int) spentAmount);
                 category.addSpentChange(spentChange);
-                category.updateRemaining(category.getRemaining() - category.getSpent());
-                category.updateRemainingChange(category.getRemainingChange() - category.getSpentChange());
+                category.updateRemaining(category.getRemaining() - ((int) spentAmount));
+                category.updateRemainingChange(category.getRemainingChange() - spentChange);
                 //Update total expended
                 expended += (int) spentAmount;
                 expendedChange += spentChange;
+            }
+            //Take In Income Sheet
+            Sheet incomeSheet = workbook.getSheet("income");
+            for (int i = 1; i < incomeSheet.getPhysicalNumberOfRows(); i++) {
+                Row row = incomeSheet.getRow(i);
+                for (int j = 0; j < row.getPhysicalNumberOfCells(); j++) {
+                    double amount = row.getCell(j).getNumericCellValue();
+                    income += (int) amount;
+                    incomeChange += (int) ((amount - (int) amount) * 100);
+                }
             }
         } catch (IOException e) {
             System.out.println("workbook not found in the workbooks directory");
@@ -80,8 +102,8 @@ public class ContentManager {
             c = chars[i];
         }
         while (i < chars.length) {
-            i++;
             year.append(chars[i]);
+            i++;
         }
         return "Budget for " + month + " " + year;
     }
@@ -91,13 +113,22 @@ public class ContentManager {
     }
 
     public String getText() {
-        StringBuilder calculatedTransaction = new StringBuilder();
+        StringBuilder text = new StringBuilder();
         double totalSpent = expended + ((double) expendedChange / 100);
-        calculatedTransaction.append("Spent $" + totalSpent);
-        /*TODO: if spent > total allocated then append "you overdrew on budget by x"
-            else "you did not exceed you budget congrats, you have an additional x amount to allocate.
-         */
-        calculatedTransaction.append("-------------Category Breakdown-------------");
+        double totalIncome = income + ((double) incomeChange / 100);
+        double allocated = totalAllocated - ((double) totalAllocatedChange / 100);
+        text.append("Spent $").append(totalSpent).append("\n");
+        text.append("Total Income $").append(totalIncome).append("\n");
+        if (totalSpent > allocated) {
+            text.append("You overdrew on your budget by $")
+                    .append(allocated - totalSpent)
+                    .append("\n");
+        } else {
+            text.append("You did not exceed your budget congrats, you have an additional ")
+                    .append(allocated - totalSpent)
+                    .append(" to allocate.\n");
+        }
+        text.append("-------------------Category Breakdown-------------------\n");
         for (String key: categories.keySet()) {
             Category category = categories.get(key);
             double spent = category.getSpent() + ((double) category.getSpentChange() / 100);
@@ -105,15 +136,14 @@ public class ContentManager {
             String categoryData = category.getName() + "    " +
                     "amount spent:" + "   " + spent + "   " +
                     "amount remaining:" + "   " + remaining + "\n";
-            calculatedTransaction.append(categoryData);
+            text.append(categoryData);
         }
-        //monthly income vs spent
-        /*loop through all categories and pulling amount spent and remaining balance
+        return text.toString();
+    }
 
-         */
-        //show excceeded budget by or saved by
-
-        return null;
+    public void getEmailPreview() {
+        System.out.println("-----------Subject----------\n" + getSubject());
+        System.out.println("-----------Body-------------\n" + getText());
     }
 
 }
