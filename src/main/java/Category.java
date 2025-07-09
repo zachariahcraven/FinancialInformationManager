@@ -9,7 +9,8 @@ public class Category {
     String name;
 
     public Category() {
-
+        this.spent = 0;
+        this.spentChange = 0;
     }
 
     public void setAllocated(int allocated) {
@@ -18,14 +19,6 @@ public class Category {
 
     public void setAllocatedChange(int allocatedChange) {
         this.allocatedChange = allocatedChange;
-    }
-
-    public void setSpent(int spent) {
-        this.spent = spent;
-    }
-
-    public void setSpentChange(int spentChange) {
-        this.spentChange = spentChange;
     }
 
     public void setRemaining(int remaining) {
@@ -40,7 +33,47 @@ public class Category {
         this.name = name;
     }
 
+    public void addSpent(int spent) {
+        this.spent += spent;
+    }
+
+    public void addSpentChange(int spentChange) {
+        this.spentChange += spentChange;
+    }
+
+    public void updateRemaining(int spent) {
+        this.remaining -= spent;
+    }
+
+    public void updateRemainingChange(int spentChange) {
+        this.remainingChange -= spentChange;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public int getAllocated() {
+        return allocated;
+    }
+
+    public int getAllocatedChange() {
+        return allocatedChange;
+    }
+
+    public int getSpent() {
+        return spent;
+    }
+
+    public int getSpentChange() {
+        return spentChange;
+    }
+
+    public int getRemaining() {
+        return remaining;
+    }
+
+    public int getRemainingChange() {
+        return remainingChange;
     }
 }

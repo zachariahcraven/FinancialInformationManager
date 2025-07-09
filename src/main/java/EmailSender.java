@@ -9,19 +9,21 @@ import java.util.Properties;
 public class EmailSender {
     //TODO: change to be more dynamic later on
     private static final String EMAIL_FROM = "code52e@gmail.com";
-    private static final String EMAIL_TO = "codee52@gamil.com";
+    private static final String EMAIL_TO = "zachp25@icloud.com";
     private static final String APP_PASSWORD = "hnss xxgj audz nbqa";
 
     public static void main(String[] args) throws MessagingException, FileNotFoundException {
         ContentManager contentManager = new ContentManager("july2025");
+        contentManager.pullContent();
+
         String subject = contentManager.getSubject();
         String text = contentManager.getText();
         Message message = new MimeMessage(getEmailSession());
 
         message.setFrom(new InternetAddress(EMAIL_FROM));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(EMAIL_TO));
-        message.setSubject(subject);
-        message.setText(text);
+        message.setSubject("FIM testing");
+        message.setText("FIM testing text section");
         //Transport.send(message);
 
     }
