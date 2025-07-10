@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 public class ContentManager {
 
@@ -50,14 +51,23 @@ public class ContentManager {
                 //Set Remaining amounts in category
                 category.setRemaining(category.getAllocated());
                 category.setRemainingChange(category.getAllocatedChange());
+                category.setBudgeted(true);
                 categories.put(category.getName(), category);
             }
             //Take in the transactions
             Sheet transactions = workbook.getSheet("transactions");
-            for (int i = 1; i < transactions.getPhysicalNumberOfRows(); i++) {
+            for (int i = 1; i < transactions.getPhysicalNumberOfRows() - 1; i++) {
                 Row row = transactions.getRow(i);
                 Category category = categories.get(row.getCell(2).getStringCellValue());
-                if (category == null) {throw new RuntimeException("transactions has unbudgeted category");}
+                if (category == null) {
+                    category = new Category();
+                    category.setName(row.getCell(2).getStringCellValue());
+                    category.setAllocated(0);
+                    category.setAllocatedChange(0);
+                    category.setRemaining(0);
+                    category.setRemainingChange(0);
+                    category.setBudgeted(false);
+                }
                 double spentAmount = row.getCell(3).getNumericCellValue();
                 int spentChange = (int) Math.round(spentAmount - (int) spentAmount) * 100;
                 //Update category spent and remaining
@@ -68,6 +78,7 @@ public class ContentManager {
                 //Update total expended
                 expended += (int) spentAmount;
                 expendedChange += spentChange;
+                categories.put(category.getName(), category);
             }
             //Take In Income Sheet
             Sheet incomeSheet = workbook.getSheet("income");
@@ -114,6 +125,7 @@ public class ContentManager {
 
     public String getText() {
         StringBuilder text = new StringBuilder();
+        StringBuilder unbudgetedData = new StringBuilder();
         double totalSpent = expended + ((double) expendedChange / 100);
         double totalIncome = income + ((double) incomeChange / 100);
         double allocated = totalAllocated - ((double) totalAllocatedChange / 100);
@@ -128,16 +140,26 @@ public class ContentManager {
                     .append(allocated - totalSpent)
                     .append(" to allocate.\n");
         }
-        text.append("-------------------Category Breakdown-------------------\n");
+        text.append("------------Category Breakdown---------------------\n");
+        unbudgetedData.append("-----------Unbudgeted Breakdown----------------------\n");
         for (String key: categories.keySet()) {
             Category category = categories.get(key);
             double spent = category.getSpent() + ((double) category.getSpentChange() / 100);
             double remaining = category.getRemaining() + ((double) category.getSpentChange() / 100);
-            String categoryData = category.getName() + "    " +
-                    "amount spent:" + "   " + spent + "   " +
-                    "amount remaining:" + "   " + remaining + "\n";
-            text.append(categoryData);
+            if (category.isBudgeted()) {
+                String categoryData = String.format("%-20s amount spent: %8.2f amount remaining %8.2f\n",
+                        category.getName(),
+                        spent,
+                        remaining);
+                text.append(categoryData);
+            } else {
+                unbudgetedData.append(String.format("%-15s amount spent: %8.2f amount remaining %8.2f\n",
+                        category.getName(),
+                        spent,
+                        remaining));
+            }
         }
+        text.append(unbudgetedData);
         return text.toString();
     }
 

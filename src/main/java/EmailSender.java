@@ -10,10 +10,10 @@ public class EmailSender {
     //TODO: change to be more dynamic later on
     private static final String EMAIL_FROM = "code52e@gmail.com";
     private static final String EMAIL_TO = "zachp25@icloud.com";
-    private static final String APP_PASSWORD = "hnss xxgj audz nbqa";
+    private static final String APP_PASSWORD = "ijuy bsqq jhbx crlg";
 
     public static void main(String[] args) throws MessagingException, FileNotFoundException {
-        ContentManager contentManager = new ContentManager("july2025");
+        ContentManager contentManager = new ContentManager("june2025");
         contentManager.pullContent();
         contentManager.getEmailPreview();
         Message message = new MimeMessage(getEmailSession());
@@ -21,7 +21,11 @@ public class EmailSender {
         message.setFrom(new InternetAddress(EMAIL_FROM));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(EMAIL_TO));
         message.setSubject(contentManager.getSubject());
-        message.setText(contentManager.getText());
+        message.setContent("<html>\n" +
+                "  <body style=\"margin:0; padding:1em; font-family:sans-serif;\">\n" +
+                "    <div style=\"overflow-x:auto;\">\n" +
+                "      <pre style=\"font-family: monospace; font-size: 14px; white-space: pre;\">" +
+                contentManager.getText() + "</pre></body></html>", "text/html");
         //Transport.send(message);
         //System.out.println("Email Sent");
 
