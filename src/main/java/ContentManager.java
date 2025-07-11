@@ -1,4 +1,3 @@
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -7,6 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -18,8 +18,10 @@ public class ContentManager {
     private int totalAllocatedChange;
     private int expended;
     private int expendedChange;
-    private HashMap<String, Category> categories;
-    private String fileName;
+    private final HashMap<String, Category> categories;
+    private final String fileName;
+    //TODO: Find and Fix rounding error
+    //TODO: Add total to unbudgeted section
 
     public ContentManager(String fileName) throws FileNotFoundException {
         this.fileName = fileName;
@@ -69,12 +71,12 @@ public class ContentManager {
                     category.setBudgeted(false);
                 }
                 double spentAmount = row.getCell(3).getNumericCellValue();
-                int spentChange = (int) Math.round(spentAmount - (int) spentAmount) * 100;
+                int spentChange = (int) ((spentAmount - (int) spentAmount) * 100);
                 //Update category spent and remaining
                 category.addSpent((int) spentAmount);
                 category.addSpentChange(spentChange);
-                category.updateRemaining(category.getRemaining() - ((int) spentAmount));
-                category.updateRemainingChange(category.getRemainingChange() - spentChange);
+                category.setRemaining(category.getRemaining() - ((int) spentAmount));
+                category.setRemainingChange(category.getRemainingChange() - spentChange);
                 //Update total expended
                 expended += (int) spentAmount;
                 expendedChange += spentChange;
@@ -140,28 +142,112 @@ public class ContentManager {
                     .append(allocated - totalSpent)
                     .append(" to allocate.\n");
         }
-        text.append("------------Category Breakdown---------------------\n");
-        unbudgetedData.append("-----------Unbudgeted Breakdown----------------------\n");
+        text.append("============Category Breakdown=================\n");
+        unbudgetedData.append("===========Unbudgeted Breakdown==================\n");
         for (String key: categories.keySet()) {
             Category category = categories.get(key);
             double spent = category.getSpent() + ((double) category.getSpentChange() / 100);
-            double remaining = category.getRemaining() + ((double) category.getSpentChange() / 100);
+            double remaining = category.getRemaining() + ((double) category.getRemainingChange() / 100);
             if (category.isBudgeted()) {
-                String categoryData = String.format("%-20s amount spent: %8.2f amount remaining %8.2f\n",
-                        category.getName(),
-                        spent,
-                        remaining);
-                text.append(categoryData);
+                text.append(String.format("%-20s amount spent: %12.2f\n", category.getName(), spent));
+                text.append(String.format("%-20s amount remaining: %8.2f\n", "", remaining));
             } else {
-                unbudgetedData.append(String.format("%-15s amount spent: %8.2f amount remaining %8.2f\n",
-                        category.getName(),
-                        spent,
-                        remaining));
+                unbudgetedData.append(String.format("%-20s amount spent: %12.2f\n", category.getName(), spent));
+                unbudgetedData.append(String.format("%-20s amount remaining: %8.2f\n", "", remaining));
+
             }
         }
         text.append(unbudgetedData);
         return text.toString();
     }
+
+    public String getText(boolean wrapWithHTML) {
+
+        StringBuilder html = new StringBuilder();
+        double totalSpent = expended + expendedChange / 100.0;
+        double totalIncome = income + incomeChange / 100.0;
+        double allocated = totalAllocated - totalAllocatedChange / 100.0;
+
+        //Header
+        html.append("<html><body style=\"font-family: sans-serif; padding:1em; background:#f9f9f9;\">")
+                .append("<h2>Budget Report</h2>")
+                .append("<p>Spent: <strong>$").append(String.format("%.2f", totalSpent)).append("</strong></p>")
+                .append("<p>Total Income: <strong>$").append(String.format("%.2f", totalIncome)).append("</strong></p>");
+
+        if (totalSpent > allocated) {
+            html.append("<p style=\"color: red;\">You overdrew by <strong>$")
+                    .append(String.format("%.2f", totalSpent - allocated))
+                    .append("</strong></p>");
+        } else {
+            html.append("<p style=\"color: green;\">Under budget by <strong>$")
+                    .append(String.format("%.2f", allocated - totalSpent))
+                    .append("</strong></p>");
+        }
+
+        // Budgeted table
+        html.append("<h3>Category Breakdown</h3>")
+                .append("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"8\" style=\"border-collapse:collapse;\">")
+                .append("<thead><tr style=\"background:#ddd;\"><th align=\"left\">Category</th>")
+                .append("<th align=\"right\">Spent</th><th align=\"right\">Remaining</th></tr></thead>")
+                .append("<tbody>");
+
+        int alternator = 0;
+        for (int i = 0; i < categories.size(); i++) {
+            ArrayList<Category> values = new ArrayList<>(categories.values());
+            Category category = values.get(i);
+            if (!category.isBudgeted()) continue;
+
+            double spent = category.getSpent() + category.getSpentChange() / 100.0;
+            double remaining = category.getRemaining() + category.getRemainingChange() / 100.0;
+            // condition operator trueValue : falseValue (note for first time use)
+
+            String background = (alternator % 2 == 0 ? "#fff" : "#f1f1f1");
+            alternator++;
+            String remainingStyle = (remaining < 0 ? " style=\"color:red;\"" : "");
+
+            html.append("<tr style=\"background:").append(background).append("\">")
+                    .append("<td>").append(category.getName()).append("</td>")
+                    .append("<td align=\"right\">$").append(String.format("%,.2f", spent)).append("</td>")
+                    .append("<td align=\"right\"").append(remainingStyle).append(">$")
+                    .append(String.format("%,.2f", remaining)).append("</td>")
+                    .append("</tr>");
+        }
+        html.append("</tbody></table>");
+
+        // Unbudgeted table
+        html.append("<h3 style=\"margin-top:2em;\">Unbudgeted Breakdown</h3>")
+                .append("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"8\" style=\"border-collapse:collapse;\">")
+                .append("<thead><tr style=\"background:#ddd;\"><th align=\"left\">Category</th>")
+                .append("<th align=\"right\">Spent</th><th align=\"right\">Remaining</th></tr></thead>")
+                .append("<tbody>");
+
+        List<Category> unbudgeted = categories.values().stream()
+                .filter(category -> !category.isBudgeted())
+                .toList();
+
+        for (int i = 0; i < unbudgeted.size(); i++) {
+            Category c = unbudgeted.get(i);
+            double spent = c.getSpent() + c.getSpentChange() / 100.0;
+            double remaining = c.getRemaining() + c.getRemainingChange() / 100.0;
+            String background = (i % 2 == 0 ? "#fff" : "#f1f1f1");
+            String remainingStyle = (remaining < 0 ? " style=\"color:red;\"" : "");
+
+            html.append("<tr style=\"background:").append(background).append("\">")
+                    .append("<td>").append(c.getName()).append("</td>")
+                    .append("<td align=\"right\">$").append(String.format("%,.2f", spent)).append("</td>")
+                    .append("<td align=\"right\"").append(remainingStyle).append(">$")
+                    .append(String.format("%,.2f", remaining)).append("</td>")
+                    .append("</tr>");
+        }
+
+        // Close tags
+        html.append("</tbody></table>")
+                .append("<p style=\"font-size:13px;color:#777;\">Detailed Transactions (Coming Soon in Revised Version)</p>")
+                .append("</body></html>");
+
+        return html.toString();
+    }
+
 
     public void getEmailPreview() {
         System.out.println("-----------Subject----------\n" + getSubject());

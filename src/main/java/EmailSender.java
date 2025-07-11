@@ -2,7 +2,6 @@ import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
-import javax.security.auth.Subject;
 import java.io.FileNotFoundException;
 import java.util.Properties;
 
@@ -13,7 +12,7 @@ public class EmailSender {
     private static final String APP_PASSWORD = "ijuy bsqq jhbx crlg";
 
     public static void main(String[] args) throws MessagingException, FileNotFoundException {
-        ContentManager contentManager = new ContentManager("june2025");
+        ContentManager contentManager = new ContentManager("july2025");
         contentManager.pullContent();
         contentManager.getEmailPreview();
         Message message = new MimeMessage(getEmailSession());
@@ -21,11 +20,7 @@ public class EmailSender {
         message.setFrom(new InternetAddress(EMAIL_FROM));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(EMAIL_TO));
         message.setSubject(contentManager.getSubject());
-        message.setContent("<html>\n" +
-                "  <body style=\"margin:0; padding:1em; font-family:sans-serif;\">\n" +
-                "    <div style=\"overflow-x:auto;\">\n" +
-                "      <pre style=\"font-family: monospace; font-size: 14px; white-space: pre;\">" +
-                contentManager.getText() + "</pre></body></html>", "text/html");
+        message.setContent(contentManager.getText(true), "text/html");
         //Transport.send(message);
         //System.out.println("Email Sent");
 

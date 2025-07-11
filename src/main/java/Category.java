@@ -47,14 +47,6 @@ public class Category {
         this.spentChange += spentChange;
     }
 
-    public void updateRemaining(int spent) {
-        this.remaining = spent;
-    }
-
-    public void updateRemainingChange(int spentChange) {
-        this.remainingChange = spentChange;
-    }
-
     public String getName() {
         return name;
     }
