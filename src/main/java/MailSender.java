@@ -6,39 +6,28 @@ import java.io.FileNotFoundException;
 import java.util.Properties;
 
 public class MailSender {
-    private final String EMAIL_TO;
-    private final String EMAIL_FROM;
-    private final String APP_PASSWORD;
-    private final String FILE_NAME;
 
-    public MailSender(String emailTo, String emailFrom, String appPassword, String fileName) {
-        this.EMAIL_TO = emailTo;
-        this.EMAIL_FROM = emailFrom;
-        this.APP_PASSWORD = appPassword;
-        this.FILE_NAME = fileName;
-    }
-
-    public void sendMail() {
+    public void sendMail(String emailTo, String emailFrom, String appPassword, String fileName) {
         try {
-            ContentManager contentManager = new ContentManager(FILE_NAME);
+            ContentManager contentManager = new ContentManager(fileName);
             contentManager.pullContent();
             contentManager.getEmailPreview();
-            Message message = new MimeMessage(getEmailSession());
-            message.setFrom(new InternetAddress(EMAIL_FROM));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(EMAIL_TO));
+            Message message = new MimeMessage(getEmailSession(emailFrom, appPassword));
+            message.setFrom(new InternetAddress(emailFrom));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailTo));
             message.setSubject(contentManager.getSubject());
             message.setText(contentManager.getText());
-            Transport.send(message);
-            System.out.println("Email Sent");
+            //Transport.send(message);
+            //System.out.println("Email Sent");
         } catch (MessagingException | FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private Session getEmailSession() {
+    private Session getEmailSession(String emailFrom, String appPassword) {
         return Session.getInstance(getGmailProperties(), new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(EMAIL_FROM, APP_PASSWORD);
+                return new PasswordAuthentication(emailFrom, appPassword);
             }
         });
     }

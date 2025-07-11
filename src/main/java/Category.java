@@ -1,12 +1,13 @@
 public class Category {
 
-    int allocated;
-    int allocatedChange;
-    int spent;
-    int spentChange;
-    int remaining;
-    int remainingChange;
-    String name;
+    private int allocated;
+    private int allocatedChange;
+    private int spent;
+    private int spentChange;
+    private int remaining;
+    private int remainingChange;
+    private String name;
+    private Boolean budgeted;
 
     public Category() {
         this.spent = 0;
@@ -34,6 +35,10 @@ public class Category {
         this.name = name;
     }
 
+    public void setBudgeted(boolean isBudgeted) {
+        this.budgeted = isBudgeted;
+    }
+
     public void addSpent(int spent) {
         this.spent += spent;
     }
@@ -42,16 +47,12 @@ public class Category {
         this.spentChange += spentChange;
     }
 
-    public void updateRemaining(int spent) {
-        this.remaining = spent;
-    }
-
-    public void updateRemainingChange(int spentChange) {
-        this.remainingChange = spentChange;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public Boolean isBudgeted() {
+        return budgeted;
     }
 
     public int getAllocated() {
