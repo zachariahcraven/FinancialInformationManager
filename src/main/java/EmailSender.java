@@ -9,7 +9,7 @@ public class EmailSender {
     //TODO: change to be more dynamic later on
     private static final String EMAIL_FROM = "code52e@gmail.com";
     private static final String EMAIL_TO = "zachp25@icloud.com";
-    private static final String APP_PASSWORD = "ijuy bsqq jhbx crlg";
+    private static final String APP_PASSWORD = "your account password";
 
     public static void main(String[] args) throws MessagingException, FileNotFoundException {
         ContentManager contentManager = new ContentManager("july2025");
