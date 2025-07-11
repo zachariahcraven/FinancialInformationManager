@@ -16,9 +16,9 @@ public class MailSender {
             message.setFrom(new InternetAddress(emailFrom));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailTo));
             message.setSubject(contentManager.getSubject());
-            message.setText(contentManager.getText());
-            //Transport.send(message);
-            //System.out.println("Email Sent");
+            message.setContent(contentManager.getText(true), "text/html");
+            Transport.send(message);
+            System.out.println("Email Sent");
         } catch (MessagingException | FileNotFoundException e) {
             e.printStackTrace();
         }
